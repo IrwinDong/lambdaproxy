@@ -1,29 +1,32 @@
-from http.server import BaseHTTPRequestHandler
 from queue import Queue, Full
+from threading import Event
 
 class LambdaRequest:
     path = None
-    handler : BaseHTTPRequestHandler = None
+    waithandler : Event = None
+    url : str = None
+    timeout : bool = False
     
-    def __init__(self, path:str, handler:BaseHTTPRequestHandler):
+    def __init__(self, path:str, waithandler:Event):
         self.path = path
-        self.handler = handler
-        
+        self.waithandler = waithandler
+
 class Distributor:
-    requestqueue = Queue()
-    targeturl : str
+    requestqueue = None
 
-    def __init__(self, targeturl:str):
-        self.targeturl = targeturl
+    def __init__(self, queue:Queue):
+        self.requestqueue = queue
 
-    def distribute(self, path:str, handler:BaseHTTPRequestHandler):
-        request = LambdaRequest(path, handler)
+    def distribute(self, path:str,):
+        waithandler = Event()
+        request = LambdaRequest(path, waithandler)
         try:
             self.requestqueue.put(request, True, 5)
         except Full:
-            handler.send_error(504, "server is busy")
-        handler.send_response(301)
-        handler.send_header('Location', self.targeturl+path)
-        handler.end_headers()
+            request.timeout = True
+        else:
+            if not waithandler.wait(10):
+                request.timeout = True
+        return request.timeout, request.url
 
 Instance:Distributor = None
