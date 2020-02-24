@@ -2,22 +2,33 @@ from threading import Thread
 from queue import Queue
 from distributor import LambdaRequest
 import distributor
+from PingConfig import PingConfig
+from PingWorker import PingWorker
 
 class QueueManagerWorker:
     targeturl:str = None
     queue : Queue = None
+    config : PingConfig
+    thread:Thread = None
+    stopping = False
 
-    def __init__(self, targeturl:str, queue:Queue):
+    def __init__(self, targeturl:str, queue:Queue, config:PingConfig):
         self.targeturl = targeturl
         self.queue = queue
+        self.config = config
 
     def processqueue(self):
-        while True:
+        while not self.stopping:
             request: LambdaRequest = self.queue.get(True)
             request.url = self.targeturl+request.path
             request.waithandler.set()
 
     def runasync(self):
-        thread = Thread(target=self.processqueue)
-        thread.start()
+        self.thread = Thread(target=self.processqueue, daemon=True)
+        self.thread.start()
+        pingworker = PingWorker(self.config)
+        pingworker.runasync()
+
+    def stop(self):
+        self.stopping = True
     
