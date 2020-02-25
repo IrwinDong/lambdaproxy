@@ -1,19 +1,19 @@
 from queue import Queue
 from LambdaProxyServer import LambdaRedirectHandler, LambdaProxyServer
-import distributor
 from QueueManagerWorker import QueueManagerWorker
 from PingConfig import PingConfig
+import distributor
 
-url = 'https://4gssmngr4e.execute-api.us-east-1.amazonaws.com/default/pack-tensorflow-dev-main'
+api_url = 'https://4gssmngr4e.execute-api.us-east-1.amazonaws.com/default/pack-tensorflow-dev-main'
 queuemanager : QueueManagerWorker = None
 
 def run():
     requestqueue = Queue()
     distributor.Instance = distributor.Distributor(requestqueue)
     config = PingConfig()
-    config.RequestPath = 'https://4gssmngr4e.execute-api.us-east-1.amazonaws.com/default/pack-tensorflow-dev-main?ping=True'
+    config.RequestPath = api_url + '?ping=True'
     config.PingInterval = 300
-    queuemanager = QueueManagerWorker(url, requestqueue, config)
+    queuemanager = QueueManagerWorker(api_url, requestqueue, config)
     queuemanager.runasync()
     server = LambdaProxyServer(('0.0.0.0', 8000), LambdaRedirectHandler)
     server.serve_forever()
