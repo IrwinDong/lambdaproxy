@@ -1,23 +1,29 @@
-from threading import Thread, Timer
+from threading import Thread, Event
 from PingConfig import PingConfig
-import urllib
+import urllib.request
+from datetime import datetime
 
 class PingWorker:
     config:PingConfig
-    timer = None
+    event = None
 
     def __init__(self, config):
         self.config = config
+        self.event = Event()
+
+    def poke(self):
+        with urllib.request.urlopen(self.config.RequestPath) as response:
+            print('ping ' + str(datetime.now()) + str(response.read()))
 
     def ping(self):
-        for i in range(self.config.PingWorker):
-            urllib.request.Request(self.config.url)
+        while not self.event.wait(self.config.PingInterval):
+            for i in range(self.config.PingWorker):
+                thread = Thread(target=self.poke)
+                thread.daemon = True
+                thread.start()
 
     def runasync(self):
-        self.timer = Timer(self.config.PingInterval, self.ping)
-        self.timer.daemon = True
-        self.timer.start()
-
-
-
+        thread = Thread(target=self.ping)
+        thread.daemon = True
+        thread.start()
     

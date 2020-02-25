@@ -11,11 +11,14 @@ class QueueManagerWorker:
     config : PingConfig
     thread:Thread = None
     stopping = False
+    pingworker = None
+
 
     def __init__(self, targeturl:str, queue:Queue, config:PingConfig):
         self.targeturl = targeturl
         self.queue = queue
         self.config = config
+        self.pingworker = PingWorker(self.config)
 
     def processqueue(self):
         while not self.stopping:
@@ -26,8 +29,7 @@ class QueueManagerWorker:
     def runasync(self):
         self.thread = Thread(target=self.processqueue, daemon=True)
         self.thread.start()
-        pingworker = PingWorker(self.config)
-        pingworker.runasync()
+        self.pingworker.runasync()
 
     def stop(self):
         self.stopping = True

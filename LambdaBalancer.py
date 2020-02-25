@@ -10,8 +10,9 @@ queuemanager : QueueManagerWorker = None
 def run():
     requestqueue = Queue()
     distributor.Instance = distributor.Distributor(requestqueue)
-    config = PingConfig
-    config.url = 'https://4gssmngr4e.execute-api.us-east-1.amazonaws.com/default/pack-tensorflow-dev-main?ping=True'
+    config = PingConfig()
+    config.RequestPath = 'https://4gssmngr4e.execute-api.us-east-1.amazonaws.com/default/pack-tensorflow-dev-main?ping=True'
+    config.PingInterval = 300
     queuemanager = QueueManagerWorker(url, requestqueue, config)
     queuemanager.runasync()
     server = LambdaProxyServer(('0.0.0.0', 8000), LambdaRedirectHandler)
