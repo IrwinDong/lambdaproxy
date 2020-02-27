@@ -1,3 +1,4 @@
+import threading
 from threading import Thread, Event
 from PingConfig import PingConfig
 import urllib.request
@@ -12,10 +13,11 @@ class PingWorker:
         self.event = Event()
 
     def poke(self):
+        id = threading.get_ident()
         while self.event.wait():
-            print('ping start ' + str(datetime.now()))
-            with urllib.request.urlopen(self.config.RequestPath) as response:
-                print('ping ' + str(datetime.now()) + str(response.read()))
+            print('ping start({}) {}'.format(id, datetime.now()))
+            with urllib.request.urlopen(self.config.RequestPath):
+                print('ping responded({}) {}'.format(id, datetime.now()))
 
     def ping(self):
         for i in range(self.config.PingWorker):
