@@ -12,15 +12,20 @@ class PingWorker:
         self.event = Event()
 
     def poke(self):
-        with urllib.request.urlopen(self.config.RequestPath) as response:
-            print('ping ' + str(datetime.now()) + str(response.read()))
+        while self.event.wait():
+            print('ping start ' + str(datetime.now()))
+            with urllib.request.urlopen(self.config.RequestPath) as response:
+                print('ping ' + str(datetime.now()) + str(response.read()))
 
     def ping(self):
+        for i in range(self.config.PingWorker):
+            thread = Thread(target=self.poke)
+            thread.daemon = True
+            thread.start()
         while not self.event.wait(self.config.PingInterval):
-            for i in range(self.config.PingWorker):
-                thread = Thread(target=self.poke)
-                thread.daemon = True
-                thread.start()
+            self.event.set()
+            self.event.clear()
+
 
     def runasync(self):
         thread = Thread(target=self.ping)
